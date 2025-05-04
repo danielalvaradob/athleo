@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+psycopg2
+pydantic
+python-jose
+passlib[bcrypt]
+pytest
+httpx
+pytest-asyncio
