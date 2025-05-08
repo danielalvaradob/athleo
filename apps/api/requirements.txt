@@ -1,9 +1,12 @@
 fastapi
 uvicorn
-psycopg2
+psycopg2-binary  # Use psycopg2-binary for easier installation
 pydantic
+pydantic-settings  # Required for BaseSettings in Pydantic v2.x
 python-jose
 passlib[bcrypt]
 pytest
 httpx
 pytest-asyncio
+pytest-mock  # Add pytest-mock for mocking in tests
+pytest-cov  # Add pytest-cov for test coverage
