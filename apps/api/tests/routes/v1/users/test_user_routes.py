@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
-from app.routes.user import router
+from app.routes.v1.user import router
 from app.db.models import User, UserRole
 from app.schemas.user import UserCreate
 from app.main import app  # Assuming your FastAPI app is in app.main

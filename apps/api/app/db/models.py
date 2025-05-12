@@ -1,7 +1,7 @@
-from sqlalchemy import Column, ForeignKey, String, Enum as SQLEnum, DateTime, Table, Integer, Float, Boolean
+from sqlalchemy import Column, ForeignKey, String, Enum as SQLEnum, DateTime, Table, Integer, Float, Boolean, MetaData
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 from app.db.session import Base
 import enum
@@ -19,18 +19,22 @@ class UserLanguage(str, enum.Enum):
     es = "es"
 
 # Association table for Many-to-Many relationship
+metadata = MetaData()
+
 user_equipment = Table(
     "user_equipment",
-    Base.metadata,
-    Column("user_id", PGUUID(as_uuid=True), ForeignKey("users.id"), primary_key=True),
-    Column("equipment_id", PGUUID(as_uuid=True), ForeignKey("equipment.id"), primary_key=True),
+    metadata,
+    Column("user_id", ForeignKey("users.id"), primary_key=True),
+    Column("equipment_id", ForeignKey("equipment.id"), primary_key=True),
+    extend_existing=True,  # Allow redefinition of the table
 )
 
 routine_day_exercises = Table(
     "routine_day_exercises",
-    Base.metadata,
-    Column("routine_day_id", PGUUID(as_uuid=True), ForeignKey("routine_days.id"), primary_key=True),
-    Column("exercise_id", PGUUID(as_uuid=True), ForeignKey("exercises.id"), primary_key=True),
+    metadata,
+    Column("routine_day_id", ForeignKey("routine_days.id"), primary_key=True),
+    Column("exercise_id", ForeignKey("exercises.id"), primary_key=True),
+    extend_existing=True,  # Allow redefinition of the table
 )
 
 user_trainers = Table(
@@ -45,40 +49,14 @@ user_trainers = Table(
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    email = Column(String, unique=True, nullable=False, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
-    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.user)
-    language = Column(SQLEnum(UserLanguage), nullable=False, default=UserLanguage.en)
-    is_ai_trainer = Column(Boolean, default=False)  # Indicates if the user is an AI trainer
-    trainer_id = Column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=True)  # Link to the trainer
-
-    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc))
-    updated_at = Column(
-        DateTime,
-        default=datetime.now(datetime.timezone.utc),
-        onupdate=datetime.now(datetime.timezone.utc),
-    )
-
-    # Relationships
-    routines = relationship("Routine", back_populates="user")
-    exercise_logs = relationship("ExerciseLog", back_populates="user")
-    equipment = relationship("Equipment", secondary=user_equipment, back_populates="users")
-
-    # Trainer-Trainee Relationships
-    # Usuarios que entrenan a este usuario
-    trainers = relationship(
-        "User",
-        secondary=user_trainers,
-        primaryjoin=User.id == user_trainers.c.trainee_id,
-        secondaryjoin=User.id == user_trainers.c.trainer_id,
-        backref="trainees"
-    )
-    
-    # The trainer for this user
-    trainees = relationship("User", back_populates="trainer", cascade="all, delete-orphan")  # Trainees assigned to this trainer
+    # Use string references for relationships
+    trainers = relationship("User", secondary="user_trainers", primaryjoin="User.id == user_trainers.c.trainee_id")
 
 # Enum for equipment type
 class EquipmentType(str, enum.Enum):
@@ -95,11 +73,11 @@ class Equipment(Base):
     type = Column(SQLEnum(EquipmentType), nullable=False)  # Type: home or gym
 
     created_at = Column(
-        DateTime, default=datetime.now(datetime.timezone.utc))
+        DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
-        default=datetime.now(datetime.timezone.utc),
-        onupdate=datetime.now(datetime.timezone.utc))
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc))
 
     # Relationships
     users = relationship("User", secondary=user_equipment, back_populates="equipment")
@@ -123,11 +101,11 @@ class Exercise(Base):
     exercise_logs = relationship("ExerciseLog", back_populates="exercise")
     routine_days = relationship("RoutineDay", secondary=routine_day_exercises, back_populates="exercises")
 
-    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
-        default=datetime.now(datetime.timezone.utc),
-        onupdate=datetime.now(datetime.timezone.utc),
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
 
 class ExerciseLog(Base):
@@ -140,18 +118,18 @@ class ExerciseLog(Base):
     weight = Column(Float, nullable=False)  # Weight used for the exercise
     reps = Column(Integer, nullable=False)  # Number of reps performed
     sets = Column(Integer, nullable=False)  # Number of sets performed
-    date = Column(DateTime, nullable=False, default=datetime.now(datetime.timezone.utc))
+    date = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     notes = Column(String, nullable=True)  # Optional notes for the log
 
     # Relationships
     user = relationship("User", back_populates="exercise_logs")
     exercise = relationship("Exercise", back_populates="exercise_logs")
 
-    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
-        default=datetime.now(datetime.timezone.utc),
-        onupdate=datetime.now(datetime.timezone.utc),
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
 
 class Routine(Base):
@@ -162,11 +140,11 @@ class Routine(Base):
     is_active = Column(Boolean, default=False)
     user_id = Column(PGUUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
 
-    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
-        default=datetime.now(datetime.timezone.utc),
-        onupdate=datetime.now(datetime.timezone.utc),
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
 
     # Relationships
@@ -181,11 +159,11 @@ class RoutineDay(Base):
     name = Column(String, nullable=False)  # Custom label: "Legs", "Push", etc.
     routine_id = Column(PGUUID(as_uuid=True), ForeignKey("routines.id"), nullable=False)
 
-    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
-        default=datetime.now(datetime.timezone.utc),
-        onupdate=datetime.now(datetime.timezone.utc),
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
 
     # Relationships
