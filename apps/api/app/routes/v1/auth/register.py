@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.schemas.user import UserCreate, UserOut
-from app.db.models import User, UserRole
+from app.db.models.user import User, UserRole
 from app.db.session import SessionLocal
 from sqlalchemy.exc import IntegrityError
 

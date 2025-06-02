@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi import APIRouter, HTTPException, Depends, Response, Cookie  # Add Cookie here
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from app.db.session import SessionLocal
-from app.db.models import User
+from app.db.models.user import User
 from app.auth.password import verify_password
-from app.auth.jwt import create_access_token, create_refresh_token
+from app.auth.jwt import create_access_token, create_refresh_token, decode_token
 from datetime import timedelta
 from app.core.config import settings
 

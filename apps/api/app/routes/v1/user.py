@@ -52,3 +52,4 @@ def create_ai_user(user: UserCreate, admin_user_id: str = Depends(get_user_by_id
         raise HTTPException(status_code=400, detail="An error occurred while creating the AI trainer.")
     finally:
         db.close()
+

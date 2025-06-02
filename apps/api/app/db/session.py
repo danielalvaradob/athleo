@@ -8,8 +8,3 @@ engine = create_engine(settings.DATABASE_URL)
 
 # Create a configured "SessionLocal" class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Define the Base class for models
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
